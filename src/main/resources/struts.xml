@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
+    "http://struts.apache.org/dtds/struts-2.5.dtd">
+ 
+ 
+<!--下面使用的各项属性值的所有可能取值都可在struts-default.xml中找到.  -->
+<!-- 
+	action: 一个struts请求就是一个action
+	Action: 能够处理struts请求的类
+
+ -->
+ 
+<struts>
+
+	
+
+ 	<!-- struts使用包来组织模块, 一个包中定义一系列拦截器,动作, 使用extends可以继承一个包 ,通常情况下继承struts-default
+ 		namespace属性是可选的, 默认为 / ,加上某个命名空间之后, 该package中定义的所有路径就需要加上对应的namespace路径.
+ 	-->
+ 	<!-- 设置响应后缀 -->
+ 	<constant name="struts.action.extension" value="action,,"></constant>
+ 	<!-- 允许动态方法调用 -->
+ 	<constant name="struts.enable.DynamicMethodInvocation" value="true"></constant>
+	<!-- 允许静态方法调用 -->
+	<constant name="struts.ognl.allowStaticMethodAccess" value="true"></constant>
+	
+	<package name="default" namespace="/" extends="struts-default">
+		<interceptors>
+	    <interceptor-stack name="sshStack">
+	        <interceptor-ref name="paramsPrepareParamsStack">
+	            <param name="alwaysInvokePrepare">false</param>
+	        </interceptor-ref>
+	    </interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="sshStack"/>
+		<global-allowed-methods>regex:.*</global-allowed-methods>
+		<action name="emp-*" class="employeeAction" method="{1}">
+			<result name="{1}">/{1}.jsp</result>
+			<result name="success" type="redirectAction">emp-list</result>
+        	<result type="stream" name="ajax-success">
+		        <param name="contentType">text/html</param>
+		        <param name="inputName">inputStream</param>
+		    </result>	
+			
+		</action>
+	</package>
+</struts>

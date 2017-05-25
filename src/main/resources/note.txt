@@ -1,0 +1,70 @@
+Spring如何在web应用中使用?
+	1)需要额外两个包: spring-web spring-webmvc
+	2)何时创建IOC容器?
+		ServletContextListener.contextInitialized(javax.servlet.ServletContextEvent arg0)中创建最合适
+	3)怎么使用IOC容器
+		把IOC容器实例放到ServletContext的属性域中
+	
+实际上spring提供了上面所说步骤的实现:
+	1)在web.xml中 alt+/ ,选择contextloaderlistener
+ 	<!-- needed for ContextLoaderListener -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>location</param-value>
+	</context-param>
+
+	<!-- Bootstraps the root web application context before servlet initialization -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	
+	2)获取ApplicationContext:
+	ApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(ServletContext application
+	
+Spring整合Struts的目标:
+	使IOC容器来管理Struts的Action
+
+在IOC容器中配置Struts的Action时, 需要配置scope属性, 其值必须为prototype
+
+配置Struts的配置文件: action节点的class属性需要指向IOC容器中该bean的id
+
+需要加入jar包:struts2-spring-plugin
+
+spring 整合hibernate 整合什么？
+1)由IOC容器来管hibernate的SessionFactory
+2)让hibernate使用上Spring的声明式事务
+
+坑:
+1)数据库方言设置为org.hibernate.dialect.MySQL5Dialect,mysql默认使用引擎MyISAM, 而这个引擎是不支持事务回滚的
+	所以设置数据库方言为org.hibernate.dialect.MySQL5InnoDBDialect
+2)通过xml aop 配置事务时总是不起作用, 使用Transaction注解可以.
+
+在list.jsp中:
+1.必须使用迫切左外连接, 否则在list.jsp页面中需要部门信息时, 部门会被延迟加载导致错误,原因在于一个事务提交以后会关闭session, session关闭之前都未曾初始化department,就会导致延迟加载异常
+	String hql = "FROM Employee e LEFT JOIN FETCH e.department";
+2.或者也可以在<many-to-one>中关闭延迟加载
+3.使用 OpenSessionInViewFilter 也可以
+
+坑:
+在input.jsp中 
+	<h4>Edit Employee</h4>SS
+	<s:form action="emp-save">S
+		<s:if test="id != null">
+			<s:textfield name="lastName" label="LASTNAME" disabled="true"></s:textfield>
+			<s:hidden name="id"></s:hidden>
+		</s:if>
+		<s:else>
+		<s:textfield name="lastName" label="LASTNAME"></s:textfield>
+		</s:else>
+		<s:textfield name="email" label="EMAIL"></s:textfield>
+		<s:textfield name="birth" label="BIRTH"></s:textfield>
+		<s:select list="#request.departments" name="department.id" listKey="id" listValue="departmentName" label="DEPARTMENT"></s:select>	
+		<s:submit></s:submit>
+	</s:form>
+以及EmployeeAction中
+	public void prepareSave(){
+		if(id != null)
+			employee = employeeService.getEmpolyeeById(id);
+		else employee = new Employee();
+	}
+	修改操作时, department改变不了,原因在于Dao中对department使用了延迟加载
